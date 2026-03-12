@@ -1,0 +1,63 @@
+// Transmitter Code 
+
+#include <SPI.h>                      
+#include "RF24.h"                     
+
+int msg[5]; // Total number of data to be sent (data package)
+
+// define the flex sensor input pins
+int flex_5 = A5;
+int flex_4 = A4;
+int flex_3 = A3;
+int flex_2 = A2;
+int flex_1 = A1;
+
+// define variables for flex sensor values
+int flex_5_val;
+int flex_4_val;
+int flex_3_val;
+int flex_2_val;
+int flex_1_val;
+
+RF24 radio(9,10);   // CE=9, CSN=10
+
+const uint64_t pipe = 0xE8E8F0F0E1LL; // receiver address
+
+void setup(void) {
+  Serial.begin(9600);
+  radio.begin();                      
+  radio.openWritingPipe(pipe);        
+
+  Serial.println("nRF24 Transmitter ready...");
+}
+
+void loop(void) {
+  // Read and map flex sensor values
+  flex_5_val = map(analogRead(flex_5), 630, 730, 80, 20);
+  flex_4_val = map(analogRead(flex_4), 520, 710, 70, 175);
+  flex_3_val = map(analogRead(flex_3), 510, 680, 140, 10);
+  flex_2_val = map(analogRead(flex_2), 580, 715, 90, 175);
+  flex_1_val = map(analogRead(flex_1), 550, 700, 90, 175);
+
+  // Pack values into message array
+  msg[0] = flex_5_val;
+  msg[1] = flex_4_val;
+  msg[2] = flex_3_val;
+  msg[3] = flex_2_val;
+  msg[4] = flex_1_val;
+
+  // Send via nRF24
+  bool success = radio.write(msg, sizeof(msg));
+
+  // Print to Serial Monitor
+  Serial.print("Sent -> ");
+  Serial.print("F1: "); Serial.print(msg[4]);
+  Serial.print(" | F2: "); Serial.print(msg[3]);
+  Serial.print(" | F3: "); Serial.print(msg[2]);
+  Serial.print(" | F4: "); Serial.print(msg[1]);
+  Serial.print(" | F5: "); Serial.print(msg[0]);
+  Serial.print(" | Status: ");
+  Serial.println(success ? "OK" : "FAILED");
+
+  delay(200); // small delay between sends
+}
