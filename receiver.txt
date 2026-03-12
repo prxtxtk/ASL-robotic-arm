@@ -1,0 +1,61 @@
+// Receiver Code (Hand) - Mert Arduino and Tech + Serial Output
+
+#include <Servo.h>
+#include <SPI.h>
+#include "RF24.h"
+
+// define the servo objects
+Servo myServo1;
+Servo myServo2;
+Servo myServo3;
+Servo myServo4;
+Servo myServo5;
+
+RF24 radio(9,10);  // CE=9, CSN=10
+
+const uint64_t pipe = 0xE8E8F0F0E1LL; // must match transmitter
+
+int msg[5];
+
+void setup() {
+  // attach servos (using analog pin numbers as digital pins)
+  myServo1.attach(A1); // pin 15
+  myServo2.attach(A2); // pin 16
+  myServo3.attach(A3); // pin 17
+  myServo4.attach(A4); // pin 18
+  myServo5.attach(A5); // pin 19
+
+  // start serial for debug
+  Serial.begin(9600);
+  Serial.println("nRF24 Receiver ready...");
+
+  // setup radio
+  if (!radio.begin()) {
+    Serial.println("nRF24 init failed! Check wiring & power.");
+    while (1); // stop if not found
+  }
+  radio.openReadingPipe(1, pipe);
+  radio.startListening();
+}
+
+void loop() {
+  if (radio.available()) {
+    radio.read(msg, sizeof(msg));
+
+    // drive servos with received data
+    myServo1.write(msg[2]); // flex_3
+    myServo2.write(msg[4]); // flex_1
+    myServo3.write(msg[3]); // flex_2
+    myServo4.write(msg[1]); // flex_4
+    myServo5.write(msg[0]); // flex_5
+
+    // print values to Serial Monitor
+    Serial.print("Received -> ");
+    Serial.print("F1: "); Serial.print(msg[4]);
+    Serial.print(" | F2: "); Serial.print(msg[3]);
+    Serial.print(" | F3: "); Serial.print(msg[2]);
+    Serial.print(" | F4: "); Serial.print(msg[1]);
+    Serial.print(" | F5: "); Serial.print(msg[0]);
+    Serial.println();
+  }
+}
