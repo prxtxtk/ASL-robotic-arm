@@ -1,0 +1,98 @@
+```#include <Servo.h>
+
+// ---- Pose Struct ----
+struct Pose {
+  uint8_t thumb, pinky, middle, ring, index;
+};
+
+// ---- Servo Objects ----
+Servo thumbServo, pinkyServo, middleServo, ringServo, indexServo;
+
+const int LED_PIN = 13;
+
+// ---- Servo Limits ----
+const int THUMB_EXT = 50, THUMB_CURL = 180, THUMB_HALF = 140;
+const int INDEX_EXT = 0,  INDEX_CURL = 90, INDEX_HALF = 45;
+const int MIDDLE_EXT = 65, MIDDLE_CURL = 155, MIDDLE_HALF = 110;
+const int RING_EXT = 0,   RING_CURL = 90, RING_HALF = 45;
+const int PINKY_EXT = 90, PINKY_CURL = 0, PINKY_HALF = 45;
+
+// Clamp helper
+inline int CLAMP(int v) { return v < 0 ? 0 : (v > 180 ? 180 : v); }
+
+// ---- ASL Alphabet Poses ----
+const Pose POSES[26] = {
+  // Thumb, Pinky, Middle, Ring, Index
+  {THUMB_EXT, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_CURL}, // A
+  {THUMB_CURL, PINKY_EXT, MIDDLE_EXT, RING_EXT, INDEX_EXT},      // B
+  {THUMB_HALF, PINKY_HALF, MIDDLE_HALF,  RING_HALF,  INDEX_HALF},                       // C (curved hand)
+  {THUMB_CURL, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_EXT},   // D
+  {THUMB_CURL, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_CURL}, // E (fist, tighter than S)
+  {THUMB_CURL, PINKY_EXT, MIDDLE_EXT, RING_EXT, INDEX_CURL},             // F
+  {THUMB_EXT, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_EXT},    // G
+  {THUMB_CURL, PINKY_CURL, MIDDLE_EXT, RING_CURL, INDEX_EXT},      // H
+  {THUMB_CURL, PINKY_EXT, MIDDLE_CURL, RING_CURL, INDEX_CURL},  // I
+  {THUMB_CURL, PINKY_EXT, MIDDLE_CURL, RING_CURL, INDEX_CURL},  // J (approximation)
+  {THUMB_HALF, PINKY_CURL, MIDDLE_EXT, RING_CURL, INDEX_EXT},    // K
+  {THUMB_EXT, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_EXT},   // L
+  {THUMB_CURL, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_CURL}, // M (fist, 3 fingers over thumb)
+  {THUMB_CURL, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_CURL}, // N (fist, 2 fingers over thumb)
+  {THUMB_CURL, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_CURL}, // O (closed O)
+  {THUMB_HALF, PINKY_CURL, MIDDLE_HALF, RING_CURL, INDEX_EXT},   // P
+  {THUMB_HALF, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_EXT},   // Q
+  {THUMB_HALF, PINKY_CURL, MIDDLE_EXT, RING_CURL, INDEX_EXT},    // R
+  {THUMB_CURL, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_CURL}, // S
+  {THUMB_HALF, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_CURL},  // T
+  {THUMB_CURL, PINKY_CURL, MIDDLE_EXT, RING_CURL, INDEX_EXT},     // U
+  {THUMB_CURL, PINKY_CURL, MIDDLE_EXT, RING_CURL, INDEX_EXT},     // V
+  {THUMB_CURL, PINKY_CURL, MIDDLE_EXT, RING_EXT, INDEX_EXT},      // W
+  {THUMB_CURL, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_HALF},   // X
+  {THUMB_EXT, PINKY_EXT, MIDDLE_CURL, RING_CURL, INDEX_CURL},    // Y
+  {THUMB_HALF, PINKY_CURL, MIDDLE_CURL, RING_CURL, INDEX_EXT}    // Z (approximation)
+};
+
+// ---- Functions ----
+void applyPose(const Pose &p) {
+  thumbServo.write(CLAMP(p.thumb));
+  pinkyServo.write(CLAMP(p.pinky));
+  middleServo.write(CLAMP(p.middle));
+  ringServo.write(CLAMP(p.ring));
+  indexServo.write(CLAMP(p.index));
+}
+
+void showLetter(char c) {
+  if (c < 'A' || c > 'Z') return;
+  const Pose &p = POSES[c - 'A'];
+  Serial.print("Showing letter: ");
+  Serial.println(c);
+  applyPose(p);
+
+  digitalWrite(LED_PIN, HIGH);
+  delay(200);
+  digitalWrite(LED_PIN, LOW);
+}
+
+// ---- Setup ----
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  thumbServo.attach(A1);
+  pinkyServo.attach(A2);
+  middleServo.attach(A3);
+  ringServo.attach(A4);
+  indexServo.attach(A5);
+
+  Serial.println("ASL Hand ready. Type A-Z and press ENTER.");
+}
+
+// ---- Loop ----
+void loop() {
+  if (Serial.available() > 0) {
+    char c = toupper(Serial.read());
+    if (c >= 'A' && c <= 'Z') {
+      showLetter(c);
+    }
+  }
+}```
